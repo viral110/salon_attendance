@@ -1,0 +1,48 @@
+class AppLocalizations {
+  static const Map<String, String> _strings = {
+    'app_title': 'Staff Attendance Management System',
+    'dashboard': 'Dashboard',
+    'face_attendance': 'Face Attendance',
+    'staff_management': 'Staff Management',
+    'attendance_history': 'Attendance History',
+    'register_face': 'Register Face',
+    'update_face': 'Update Face',
+    'remove_face': 'Remove Face',
+    'face_registered': 'Registered',
+    'face_not_registered': 'Not Registered',
+    'position_face_inside': 'Position your face inside the frame',
+    'look_at_camera': 'Look directly at the camera',
+    'keep_face_visible': 'Keep your face clearly visible',
+    'remove_obstructions': 'Remove glasses/hats if obstructing',
+    'good_lighting': 'Ensure sufficient lighting',
+    'start_verification': 'Start Verification',
+    'searching_face': 'Searching for face...',
+    'face_detected': 'Face detected. Verifying...',
+    'verifying_face': 'Verifying identity...',
+    'face_matched': 'Face matched successfully!',
+    'check_in_success': 'Check-In Successful',
+    'check_out_success': 'Check-Out Successful',
+    'already_checked_in': 'Already Checked In',
+    'already_checked_out': 'Already Checked Out',
+    'face_not_recognized': 'Face Not Recognized',
+    'unregistered_face_msg': 'This face is not registered in the system.',
+    'staff_inactive': 'Staff Account Inactive',
+    'contact_admin': 'Please contact system administrator.',
+    'camera_permission_required': 'Camera permission is required for face recognition.',
+    'grant_permission': 'Grant Permission',
+    'working_hours': 'Working Hours',
+    'total_present': 'Total Present',
+    'late_checkins': 'Late Check-Ins',
+    'early_checkouts': 'Early Check-Outs',
+    'incomplete_attendance': 'Incomplete Attendance',
+    'no_face_detected': 'No face detected. Position your face in frame.',
+    'multiple_faces': 'Multiple faces detected. Only one person must be visible.',
+    'move_closer': 'Move closer to the camera.',
+    'move_away': 'Move slightly away from the camera.',
+    'center_face': 'Please center your face.',
+  };
+
+  static String get(String key) {
+    return _strings[key] ?? key;
+  }
+}
