@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import '../config/api_endpoints.dart';
 import '../models/staff_model.dart';
-import '../utils/api_logger.dart';
+import 'api_service.dart';
 
 class StaffFaceEnrollmentResponse {
   final bool success;
@@ -16,7 +16,12 @@ class StaffFaceEnrollmentResponse {
 }
 
 class StaffService {
-  static const String baseUrl = 'https://testapi.victoriabeautysalon.in/api';
+  static String get baseUrl => ApiEndpoints.baseUrl;
+
+  final ApiService _apiService;
+
+  StaffService({ApiService? apiService})
+      : _apiService = apiService ?? ApiService();
 
   // In-memory cache for fast scanning and offline resilience
   List<StaffModel> _cachedStaffList = [];
@@ -30,23 +35,8 @@ class StaffService {
       return _cachedStaffList;
     }
 
-    final url = '$baseUrl/staff';
-    final headers = {'Accept': 'application/json'};
-
-    ApiLogger.logRequest(method: 'GET', url: url, headers: headers);
-
     try {
-      final response = await http.get(
-        Uri.parse(url),
-        headers: headers,
-      );
-
-      ApiLogger.logResponse(
-        method: 'GET',
-        url: url,
-        statusCode: response.statusCode,
-        responseBody: response.body,
-      );
+      final response = await _apiService.get(ApiEndpoints.staff);
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
@@ -62,32 +52,15 @@ class StaffService {
           return _cachedStaffList;
         }
       }
-    } catch (e) {
-      ApiLogger.logError(method: 'GET', url: url, error: e);
-    }
+    } catch (_) {}
 
     return _cachedStaffList;
   }
 
   /// Fetch registered staff face templates from GET /api/v1/staff/face-templates
   Future<List<StaffFaceTemplateModel>> getFaceTemplates() async {
-    final url = '$baseUrl/v1/staff/face-templates';
-    final headers = {'Accept': 'application/json'};
-
-    ApiLogger.logRequest(method: 'GET', url: url, headers: headers);
-
     try {
-      final response = await http.get(
-        Uri.parse(url),
-        headers: headers,
-      );
-
-      ApiLogger.logResponse(
-        method: 'GET',
-        url: url,
-        statusCode: response.statusCode,
-        responseBody: response.body,
-      );
+      final response = await _apiService.get(ApiEndpoints.staffFaceTemplates);
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
@@ -99,9 +72,7 @@ class StaffService {
           return _cachedFaceTemplates;
         }
       }
-    } catch (e) {
-      ApiLogger.logError(method: 'GET', url: url, error: e);
-    }
+    } catch (_) {}
     return _cachedFaceTemplates;
   }
 
@@ -188,11 +159,6 @@ class StaffService {
     List<List<double>>? faceTemplates,
   }) async {
     final numericId = staffId is num ? staffId.toInt() : int.tryParse(staffId.toString()) ?? 0;
-    final url = '$baseUrl/v1/staff/face-register';
-    final headers = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    };
 
     final String faceTemplateJson = (faceTemplates != null && faceTemplates.isNotEmpty)
         ? jsonEncode(faceTemplates)
@@ -200,26 +166,16 @@ class StaffService {
 
     final String primaryEmbeddingJson = jsonEncode(faceEmbedding);
 
-    final bodyPayload = jsonEncode({
+    final bodyPayload = {
       'staffId': numericId,
       'face_template': faceTemplateJson,
       'primaryEmbedding': primaryEmbeddingJson,
-    });
-
-    ApiLogger.logRequest(method: 'POST', url: url, headers: headers, body: bodyPayload);
+    };
 
     try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: headers,
+      final response = await _apiService.post(
+        ApiEndpoints.staffFaceRegister,
         body: bodyPayload,
-      );
-
-      ApiLogger.logResponse(
-        method: 'POST',
-        url: url,
-        statusCode: response.statusCode,
-        responseBody: response.body,
       );
 
       final Map<String, dynamic> body = response.body.isNotEmpty
@@ -249,7 +205,6 @@ class StaffService {
         errors: errs,
       );
     } catch (e) {
-      ApiLogger.logError(method: 'POST', url: url, error: e);
       return StaffFaceEnrollmentResponse(
         success: false,
         message: 'Network Error',
@@ -261,32 +216,16 @@ class StaffService {
   /// Delete staff face registration via GET /api/v1/staff/delete-face/{id}
   Future<bool> removeStaffFace(dynamic staffId) async {
     final sIdStr = staffId.toString();
-    final url = '$baseUrl/v1/staff/delete-face/$sIdStr';
-    final headers = {'Accept': 'application/json'};
-
-    ApiLogger.logRequest(method: 'GET', url: url, headers: headers);
 
     try {
-      final response = await http.get(
-        Uri.parse(url),
-        headers: headers,
-      );
-
-      ApiLogger.logResponse(
-        method: 'GET',
-        url: url,
-        statusCode: response.statusCode,
-        responseBody: response.body,
-      );
+      final response = await _apiService.get(ApiEndpoints.staffDeleteFace(sIdStr));
 
       if (response.statusCode == 200) {
         _updateLocalStaffFaceState(sIdStr, null, false);
         await getAllStaff(forceRefresh: true);
         return true;
       }
-    } catch (e) {
-      ApiLogger.logError(method: 'GET', url: url, error: e);
-    }
+    } catch (_) {}
 
     // Fallback update in cache
     _updateLocalStaffFaceState(sIdStr, null, false);
@@ -319,4 +258,3 @@ class StaffService {
     _cachedStaffList.removeWhere((s) => s.id == staffId || s.dbId.toString() == staffId);
   }
 }
-

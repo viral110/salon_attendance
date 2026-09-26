@@ -1,14 +1,14 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
-import '../utils/api_logger.dart';
 
+import '../config/api_endpoints.dart';
 import '../config/face_recognition_config.dart';
 import '../models/attendance_model.dart';
 import '../models/attendance_summary_model.dart';
 import '../models/attendance_verification_model.dart';
 import '../models/staff_model.dart';
+import 'api_service.dart';
 
 enum SelectedAttendanceMode { auto, checkIn, checkOut }
 
@@ -41,7 +41,11 @@ class AttendanceActionResult {
 }
 
 class AttendanceService {
+  final ApiService _apiService;
   final _uuid = const Uuid();
+
+  AttendanceService({ApiService? apiService})
+      : _apiService = apiService ?? ApiService();
 
   // In-memory store for attendance records & audit logs
   final List<AttendanceModel> _attendanceRecords = [];
@@ -156,37 +160,15 @@ class AttendanceService {
     try {
       final numericId = int.tryParse(staffId) ?? 0;
       final actionStr = targetAction == AttendanceAction.checkIn ? 'check_in' : 'check_out';
-      final url = 'https://testapi.victoriabeautysalon.in/api/v1/attendance/verify-face';
-      final headers = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      };
-      final bodyPayload = jsonEncode({
-        'staff_id': numericId,
-        'action': actionStr,
-      });
 
-      ApiLogger.logRequest(method: 'POST', url: url, headers: headers, body: bodyPayload);
-
-      final apiResponse = await http.post(
-        Uri.parse(url),
-        headers: headers,
-        body: bodyPayload,
+      await _apiService.post(
+        ApiEndpoints.attendanceVerifyFace,
+        body: {
+          'staff_id': numericId,
+          'action': actionStr,
+        },
       );
-
-      ApiLogger.logResponse(
-        method: 'POST',
-        url: url,
-        statusCode: apiResponse.statusCode,
-        responseBody: apiResponse.body,
-      );
-    } catch (e) {
-      ApiLogger.logError(
-        method: 'POST',
-        url: 'https://testapi.victoriabeautysalon.in/api/v1/attendance/verify-face',
-        error: e,
-      );
-    }
+    } catch (_) {}
 
     try {
       AttendanceModel updatedRecord;
@@ -271,37 +253,19 @@ class AttendanceService {
     final actionStr = selectedMode == SelectedAttendanceMode.checkOut ? 'check_out' : 'check_in';
     final targetAction = selectedMode == SelectedAttendanceMode.checkOut ? AttendanceAction.checkOut : AttendanceAction.checkIn;
 
-    final url = 'https://testapi.victoriabeautysalon.in/api/v1/attendance/verify-face';
-    final headers = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    };
-
     final List<List<double>> templatesList = (faceTemplates != null && faceTemplates.isNotEmpty)
         ? faceTemplates
         : [faceEmbedding];
 
     final String faceTemplateJson = jsonEncode(templatesList);
 
-    final bodyPayload = jsonEncode({
-      'face_template': faceTemplateJson,
-      'action': actionStr,
-    });
-
-    ApiLogger.logRequest(method: 'POST', url: url, headers: headers, body: bodyPayload);
-
     try {
-      final apiResponse = await http.post(
-        Uri.parse(url),
-        headers: headers,
-        body: bodyPayload,
-      );
-
-      ApiLogger.logResponse(
-        method: 'POST',
-        url: url,
-        statusCode: apiResponse.statusCode,
-        responseBody: apiResponse.body,
+      final apiResponse = await _apiService.post(
+        ApiEndpoints.attendanceVerifyFace,
+        body: {
+          'face_template': faceTemplateJson,
+          'action': actionStr,
+        },
       );
 
       final Map<String, dynamic> responseData = jsonDecode(apiResponse.body);
@@ -398,12 +362,6 @@ class AttendanceService {
         errors: errorsMessage,
       );
     } catch (e) {
-      ApiLogger.logError(
-        method: 'POST',
-        url: url,
-        error: e,
-      );
-
       return AttendanceActionResult(
         success: false,
         action: targetAction,
@@ -468,19 +426,14 @@ class AttendanceService {
   /// GET /api/v1/attendance/today-summary?date=YYYY-MM-DD&limit=10
   Future<Map<String, dynamic>?> fetchTodaySummaryApi({String? date, int limit = 10}) async {
     final dateStr = date ?? DateFormat('yyyy-MM-dd').format(DateTime.now());
-    final url = 'https://testapi.victoriabeautysalon.in/api/v1/attendance/today-summary?date=$dateStr&limit=$limit';
-    final headers = {'Accept': 'application/json'};
-
-    ApiLogger.logRequest(method: 'GET', url: url, headers: headers);
 
     try {
-      final response = await http.get(Uri.parse(url), headers: headers);
-
-      ApiLogger.logResponse(
-        method: 'GET',
-        url: url,
-        statusCode: response.statusCode,
-        responseBody: response.body,
+      final response = await _apiService.get(
+        ApiEndpoints.attendanceTodaySummary,
+        queryParameters: {
+          'date': dateStr,
+          'limit': limit.toString(),
+        },
       );
 
       if (response.statusCode == 200) {
@@ -489,9 +442,7 @@ class AttendanceService {
           return body['data'] as Map<String, dynamic>;
         }
       }
-    } catch (e) {
-      ApiLogger.logError(method: 'GET', url: url, error: e);
-    }
+    } catch (_) {}
     return null;
   }
 
@@ -516,24 +467,10 @@ class AttendanceService {
       queryParams['date'] = date;
     }
 
-    final uri = Uri.https(
-      'testapi.victoriabeautysalon.in',
-      '/api/v1/attendance/history',
-      queryParams,
-    );
-
-    final headers = {'Accept': 'application/json'};
-
-    ApiLogger.logRequest(method: 'GET', url: uri.toString(), headers: headers);
-
     try {
-      final response = await http.get(uri, headers: headers);
-
-      ApiLogger.logResponse(
-        method: 'GET',
-        url: uri.toString(),
-        statusCode: response.statusCode,
-        responseBody: response.body,
+      final response = await _apiService.get(
+        ApiEndpoints.attendanceHistory,
+        queryParameters: queryParams,
       );
 
       if (response.statusCode == 200) {
@@ -545,9 +482,7 @@ class AttendanceService {
               .toList();
         }
       }
-    } catch (e) {
-      ApiLogger.logError(method: 'GET', url: uri.toString(), error: e);
-    }
+    } catch (_) {}
     return [];
   }
 
@@ -559,19 +494,14 @@ class AttendanceService {
     required int year,
   }) async {
     final sIdStr = staffId.toString();
-    final url = 'https://testapi.victoriabeautysalon.in/api/v1/attendance-summary/$sIdStr?month=$month&year=$year';
-    final headers = {'Accept': 'application/json'};
-
-    ApiLogger.logRequest(method: 'GET', url: url, headers: headers);
 
     try {
-      final response = await http.get(Uri.parse(url), headers: headers);
-
-      ApiLogger.logResponse(
-        method: 'GET',
-        url: url,
-        statusCode: response.statusCode,
-        responseBody: response.body,
+      final response = await _apiService.get(
+        ApiEndpoints.staffAttendanceSummary(sIdStr),
+        queryParameters: {
+          'month': month.toString(),
+          'year': year.toString(),
+        },
       );
 
       if (response.statusCode == 200) {
@@ -580,12 +510,7 @@ class AttendanceService {
           return StaffAttendanceSummaryResponse.fromJson(body['data'] as Map<String, dynamic>);
         }
       }
-    } catch (e) {
-      ApiLogger.logError(method: 'GET', url: url, error: e);
-    }
+    } catch (_) {}
     return null;
   }
 }
-
-
-
