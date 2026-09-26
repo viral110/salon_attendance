@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
 
 import '../models/staff_model.dart';
-import '../services/database_service.dart';
-import '../services/staff_service.dart';
+import '../../../services/database_service.dart';
+import '../../../services/staff_service.dart';
 
 class StaffController extends GetxController {
   final StaffService _staffService = StaffService();

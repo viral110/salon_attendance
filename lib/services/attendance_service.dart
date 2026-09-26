@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:salon_attendance/modules/attendance/models/attendance_summary_model.dart';
+import 'package:salon_attendance/modules/attendance/models/attendance_verification_model.dart';
 import 'package:uuid/uuid.dart';
 
 import '../config/api_endpoints.dart';
 import '../config/face_recognition_config.dart';
-import '../models/attendance_model.dart';
-import '../models/attendance_summary_model.dart';
-import '../models/attendance_verification_model.dart';
-import '../models/staff_model.dart';
+import '../modules/attendance/models/attendance_model.dart';
+import '../modules/staff/models/staff_model.dart';
 import 'api_service.dart';
 
 enum SelectedAttendanceMode { auto, checkIn, checkOut }

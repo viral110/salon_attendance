@@ -1,10 +1,9 @@
 import 'dart:math';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
-import 'package:salon_attendance/models/staff_model.dart';
-
 import '../config/face_recognition_config.dart';
-import '../models/face_recognition_result.dart';
+import '../modules/attendance/models/face_recognition_result.dart';
+import '../modules/staff/models/staff_model.dart';
 
 abstract class FaceRecognitionService {
   Future<void> initialize();

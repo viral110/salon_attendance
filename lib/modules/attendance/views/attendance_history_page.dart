@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../../config/app_colors.dart';
-import '../../controllers/attendance_history_controller.dart';
-import '../../models/staff_model.dart';
-import '../../utils/responsive.dart';
-import '../../widgets/app_shimmer.dart';
-import '../../widgets/common_app_bar.dart';
-import '../../widgets/staff_avatar.dart';
-import '../staff/staff_attendance_summary_page.dart';
+import '../../../config/app_colors.dart';
+import '../controllers/attendance_history_controller.dart';
+import '../../staff/models/staff_model.dart';
+import '../../../utils/responsive.dart';
+import '../../../widgets/app_shimmer.dart';
+import '../../../widgets/common_app_bar.dart';
+import '../../../widgets/staff_avatar.dart';
+import '../../staff/views/staff_attendance_summary_page.dart';
 
 class AttendanceHistoryPage extends StatefulWidget {
   const AttendanceHistoryPage({super.key});

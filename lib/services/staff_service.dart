@@ -1,6 +1,7 @@
 import 'dart:convert';
+import 'package:salon_attendance/modules/staff/models/staff_model.dart';
+
 import '../config/api_endpoints.dart';
-import '../models/staff_model.dart';
 import 'api_service.dart';
 
 class StaffFaceEnrollmentResponse {

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-import '../../config/app_colors.dart';
-import '../../models/attendance_summary_model.dart';
-import '../../models/staff_model.dart';
-import '../../services/attendance_service.dart';
-import '../../utils/responsive.dart';
-import '../../widgets/app_shimmer.dart';
-import '../../widgets/common_app_bar.dart';
-import '../../widgets/staff_avatar.dart';
+import '../../../config/app_colors.dart';
+import '../../attendance/models/attendance_summary_model.dart';
+import '../models/staff_model.dart';
+import '../../../services/attendance_service.dart';
+import '../../../utils/responsive.dart';
+import '../../../widgets/app_shimmer.dart';
+import '../../../widgets/common_app_bar.dart';
+import '../../../widgets/staff_avatar.dart';
 
 class StaffAttendanceSummaryPage extends StatefulWidget {
   final StaffModel staff;
@@ -246,7 +246,7 @@ class _StaffAttendanceSummaryPageState extends State<StaffAttendanceSummaryPage>
                 _isLoading
                     ? ShimmerSkeleton.statGrid(
                         crossAxisCount: Responsive.crossAxisCount(context, mobile: 2, tablet: 4),
-                        childAspectRatio: Responsive.childAspectRatio(context, mobile: 1.35, tablet: 1.5),
+                        childAspectRatio: Responsive.childAspectRatio(context, mobile: 1.25, tablet: 1.5),
                       )
                     : GridView.count(
                         shrinkWrap: true,
@@ -254,7 +254,7 @@ class _StaffAttendanceSummaryPageState extends State<StaffAttendanceSummaryPage>
                         crossAxisCount: Responsive.crossAxisCount(context, mobile: 2, tablet: 4),
                         crossAxisSpacing: 14,
                         mainAxisSpacing: 14,
-                        childAspectRatio: Responsive.childAspectRatio(context, mobile: 1.35, tablet: 1.5),
+                        childAspectRatio: Responsive.childAspectRatio(context, mobile: 1.25, tablet: 1.5),
                         children: [
                           _buildStatCard(
                             title: 'Total Present',
@@ -402,7 +402,7 @@ class _StaffAttendanceSummaryPageState extends State<StaffAttendanceSummaryPage>
     required Color bgColor,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
@@ -422,18 +422,25 @@ class _StaffAttendanceSummaryPageState extends State<StaffAttendanceSummaryPage>
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,

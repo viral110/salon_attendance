@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import '../../config/app_colors.dart';
-import '../../controllers/face_enrollment_controller.dart';
-import '../../models/staff_model.dart';
-import '../../services/staff_service.dart';
-import '../../widgets/common_app_bar.dart';
-import '../../widgets/common_button.dart';
-import '../../widgets/face_scanner_overlay.dart';
+import '../../../config/app_colors.dart';
+import '../controllers/face_enrollment_controller.dart';
+import '../models/staff_model.dart';
+import '../../../services/staff_service.dart';
+import '../../../widgets/common_app_bar.dart';
+import '../../../widgets/common_button.dart';
+import '../../../widgets/face_scanner_overlay.dart';
 
 class RegisterFacePage extends StatefulWidget {
   final StaffModel? staff;

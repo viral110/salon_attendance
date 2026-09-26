@@ -1,8 +1,8 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
-import '../controllers/face_enrollment_controller.dart';
-import '../models/face_recognition_result.dart';
+import '../modules/staff/controllers/face_enrollment_controller.dart';
+import '../modules/attendance/models/face_recognition_result.dart';
 
 class FaceScannerOverlay extends StatelessWidget {
   final String statusMessage;

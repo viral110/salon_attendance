@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../../config/app_colors.dart';
+import '../../../../config/app_colors.dart';
 import '../../models/attendance_model.dart';
-import '../../models/staff_model.dart';
+import '../../../staff/models/staff_model.dart';
 
 class CheckOutSuccessDialog extends StatelessWidget {
   final StaffModel staff;

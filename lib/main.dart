@@ -5,10 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import 'config/app_colors.dart';
-import 'controllers/attendance_history_controller.dart';
-import 'controllers/face_attendance_controller.dart';
-import 'controllers/staff_controller.dart';
-import 'views/dashboard/dashboard_page.dart';
+import 'modules/attendance/controllers/attendance_history_controller.dart';
+import 'modules/attendance/controllers/face_attendance_controller.dart';
+import 'modules/dashboard/views/dashboard_page.dart';
+import 'modules/staff/controllers/staff_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

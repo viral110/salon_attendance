@@ -4,9 +4,9 @@ import 'package:get/get.dart';
 
 import '../models/attendance_model.dart';
 import '../models/attendance_summary_model.dart';
-import '../models/staff_model.dart';
-import '../services/attendance_service.dart';
-import '../services/staff_service.dart';
+import '../../staff/models/staff_model.dart';
+import '../../../services/attendance_service.dart';
+import '../../../services/staff_service.dart';
 
 enum DateFilterMode {
   today,

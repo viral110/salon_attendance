@@ -1,9 +1,9 @@
 import 'package:path/path.dart';
 
 import 'package:sqflite/sqflite.dart';
-import '../models/staff_model.dart';
-import '../models/attendance_model.dart';
-import '../models/attendance_verification_model.dart';
+import '../modules/attendance/models/attendance_model.dart';
+import '../modules/attendance/models/attendance_verification_model.dart';
+import '../modules/staff/models/staff_model.dart';
 
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._internal();

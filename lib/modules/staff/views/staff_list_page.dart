@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../config/app_colors.dart';
-import '../../controllers/staff_controller.dart';
-import '../../utils/responsive.dart';
-import '../../widgets/app_shimmer.dart';
-import '../../widgets/common_app_bar.dart';
-import '../../widgets/status_badge.dart';
-import '../../widgets/staff_avatar.dart';
+import '../../../config/app_colors.dart';
+import '../controllers/staff_controller.dart';
+import '../../../utils/responsive.dart';
+import '../../../widgets/app_shimmer.dart';
+import '../../../widgets/common_app_bar.dart';
+import '../../../widgets/status_badge.dart';
+import '../../../widgets/staff_avatar.dart';
 import 'staff_detail_page.dart';
 
 class StaffListPage extends StatefulWidget {

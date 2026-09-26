@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:salon_attendance/config/face_recognition_config.dart';
-import 'package:salon_attendance/models/attendance_model.dart';
-import 'package:salon_attendance/models/staff_model.dart';
+import 'package:salon_attendance/modules/attendance/models/attendance_model.dart';
+import 'package:salon_attendance/modules/staff/models/staff_model.dart';
 import 'package:salon_attendance/services/attendance_service.dart';
 import 'package:salon_attendance/services/face_recognition_service.dart';
 

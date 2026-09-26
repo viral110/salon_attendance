@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import '../../config/app_colors.dart';
-import '../../controllers/face_attendance_controller.dart';
-import '../../models/staff_model.dart';
-import '../../services/attendance_service.dart';
-import '../../widgets/common_app_bar.dart';
-import '../../widgets/common_button.dart';
-import '../../widgets/face_scanner_overlay.dart';
-import 'check_in_success_dialog.dart';
-import 'check_out_success_dialog.dart';
+import '../../../config/app_colors.dart';
+import '../controllers/face_attendance_controller.dart';
+import '../../staff/models/staff_model.dart';
+import '../../../services/attendance_service.dart';
+import '../../../widgets/common_app_bar.dart';
+import '../../../widgets/common_button.dart';
+import '../../../widgets/face_scanner_overlay.dart';
+import 'widgets/check_in_success_dialog.dart';
+import 'widgets/check_out_success_dialog.dart';
 
 class FaceAttendancePage extends StatefulWidget {
   const FaceAttendancePage({super.key});

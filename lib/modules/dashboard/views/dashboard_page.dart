@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../../config/app_colors.dart';
-import '../../controllers/attendance_history_controller.dart';
-import '../../controllers/face_attendance_controller.dart';
-import '../../controllers/staff_controller.dart';
-import '../../utils/responsive.dart';
-import '../../widgets/app_shimmer.dart';
-import '../../widgets/staff_avatar.dart';
-import '../attendance/attendance_history_page.dart';
-import '../attendance/face_attendance_page.dart';
-import '../staff/staff_list_page.dart';
+import '../../../config/app_colors.dart';
+import '../../attendance/controllers/attendance_history_controller.dart';
+import '../../attendance/controllers/face_attendance_controller.dart';
+import '../../staff/controllers/staff_controller.dart';
+import '../../../utils/responsive.dart';
+import '../../../widgets/app_shimmer.dart';
+import '../../../widgets/staff_avatar.dart';
+import '../../attendance/views/attendance_history_page.dart';
+import '../../attendance/views/face_attendance_page.dart';
+import '../../staff/views/staff_list_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});

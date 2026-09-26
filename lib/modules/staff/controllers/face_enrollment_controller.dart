@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 
-import '../config/face_recognition_config.dart';
-import '../models/face_recognition_result.dart';
+import '../../../config/face_recognition_config.dart';
+import '../../attendance/models/face_recognition_result.dart';
 import '../models/staff_model.dart';
-import '../services/face_recognition_service.dart';
-import '../services/staff_service.dart';
-import '../utils/camera_image_converter.dart';
+import '../../../services/face_recognition_service.dart';
+import '../../../services/staff_service.dart';
+import '../../../utils/camera_image_converter.dart';
 import 'staff_controller.dart';
 
 enum EnrollmentPoseStep {

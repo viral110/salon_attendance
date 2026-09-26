@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
-import '../models/attendance_model.dart';
+import '../modules/attendance/models/attendance_model.dart';
 
 class StatusBadge extends StatelessWidget {
   final String label;

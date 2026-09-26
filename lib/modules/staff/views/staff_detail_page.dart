@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../config/app_colors.dart';
-import '../../controllers/staff_controller.dart';
-import '../../models/staff_model.dart';
-import '../../utils/responsive.dart';
-import '../../widgets/common_app_bar.dart';
-import '../../widgets/staff_avatar.dart';
+import '../../../config/app_colors.dart';
+import '../controllers/staff_controller.dart';
+import '../models/staff_model.dart';
+import '../../../utils/responsive.dart';
+import '../../../widgets/common_app_bar.dart';
+import '../../../widgets/staff_avatar.dart';
 import 'register_face_page.dart';
 import 'staff_attendance_summary_page.dart';
 

@@ -4,11 +4,11 @@ import 'package:get/get.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 
 import '../models/face_recognition_result.dart';
-import '../models/staff_model.dart';
-import '../services/attendance_service.dart';
-import '../services/face_recognition_service.dart';
-import '../services/staff_service.dart';
-import '../utils/camera_image_converter.dart';
+import '../../staff/models/staff_model.dart';
+import '../../../services/attendance_service.dart';
+import '../../../services/face_recognition_service.dart';
+import '../../../services/staff_service.dart';
+import '../../../utils/camera_image_converter.dart';
 
 class FaceAttendanceController extends GetxController with WidgetsBindingObserver {
   final MLKitFaceRecognitionService _faceService = MLKitFaceRecognitionService();
