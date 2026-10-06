@@ -13,4 +13,10 @@ class ApiEndpoints {
   static const String attendanceTodaySummary = '/v1/attendance/today-summary';
   static const String attendanceHistory = '/v1/attendance/history';
   static String staffAttendanceSummary(String staffId) => '/v1/attendance-summary/$staffId';
+
+  // Templates & Settings endpoints (Managed via Salon Backend)
+  static const String templates = '/v1/templates';
+  static const String templatesStoreOrUpdate = '/v1/templates/storeOrUpdate';
+  static const String settings = '/settings';
 }
+

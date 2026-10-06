@@ -8,6 +8,7 @@ import '../../staff/models/staff_model.dart';
 import '../../../services/attendance_service.dart';
 import '../../../services/face_recognition_service.dart';
 import '../../../services/staff_service.dart';
+import '../../../services/wa_sender_service.dart';
 import '../../../utils/camera_image_converter.dart';
 
 class FaceAttendanceController extends GetxController with WidgetsBindingObserver {
@@ -357,6 +358,26 @@ class FaceAttendanceController extends GetxController with WidgetsBindingObserve
       _showSuccessDialog = true;
       _statusMessage = actionResult.message;
       update();
+
+      // Trigger WhatsApp notifications to Staff and Admin via WASender using exact backend fields
+      if (actionResult.success && _matchedStaff != null) {
+        if (actionResult.action == AttendanceAction.checkIn ||
+            actionResult.action == AttendanceAction.checkOut) {
+          if (Get.isRegistered<WASenderService>()) {
+            Get.find<WASenderService>().notifyAttendanceAction(
+              staff: _matchedStaff!,
+              action: actionResult.action,
+              checkInTime: actionResult.attendance?.checkIn,
+              checkOutTime: actionResult.attendance?.checkOut,
+              checkInTimeStr: actionResult.checkInTimeStr ?? actionResult.attendance?.checkInTimeStr,
+              checkOutTimeStr: actionResult.checkOutTimeStr ?? actionResult.attendance?.checkOutTimeStr,
+              totalHoursStr: actionResult.totalHoursStr ?? actionResult.attendance?.totalHoursStr,
+              dateStr: actionResult.dateStr ?? actionResult.attendance?.dateKey,
+              statusStr: actionResult.statusStr ?? actionResult.attendance?.rawStatus,
+            );
+          }
+        }
+      }
 
       // Automatically reset scanner after 1.5 seconds delay
       Future.delayed(const Duration(milliseconds: 1500), () {

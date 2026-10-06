@@ -40,6 +40,10 @@ class AttendanceModel {
   final String? checkOutVerificationId;
   final double? checkInConfidence;
   final double? checkOutConfidence;
+  final String? checkInTimeStr; // e.g. "02:36 PM" from backend
+  final String? checkOutTimeStr; // e.g. "03:53 PM" from backend
+  final String? totalHoursStr; // e.g. "1h 17m" from backend
+  final String? rawStatus; // e.g. "present" from backend
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -55,6 +59,10 @@ class AttendanceModel {
     this.checkOutVerificationId,
     this.checkInConfidence,
     this.checkOutConfidence,
+    this.checkInTimeStr,
+    this.checkOutTimeStr,
+    this.totalHoursStr,
+    this.rawStatus,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -67,8 +75,11 @@ class AttendanceModel {
     return null;
   }
 
-  /// Returns working duration formatted cleanly as e.g. "08h 49m".
+  /// Returns working duration formatted cleanly as e.g. "08h 49m" or backend total_hours e.g. "1h 17m".
   String get formattedWorkingDuration {
+    if (totalHoursStr != null && totalHoursStr!.trim().isNotEmpty) {
+      return totalHoursStr!.trim();
+    }
     final duration = workingDuration;
     if (duration == null) return '--';
     final hours = duration.inHours;

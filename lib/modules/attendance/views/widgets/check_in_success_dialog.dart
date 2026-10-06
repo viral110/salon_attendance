@@ -18,9 +18,11 @@ class CheckInSuccessDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final checkInTimeStr = attendance.checkIn != null
-        ? DateFormat('hh:mm a').format(attendance.checkIn!)
-        : DateFormat('hh:mm a').format(DateTime.now());
+    final checkInTimeStr = (attendance.checkInTimeStr != null && attendance.checkInTimeStr!.trim().isNotEmpty)
+        ? attendance.checkInTimeStr!.trim()
+        : (attendance.checkIn != null
+            ? DateFormat('hh:mm a').format(attendance.checkIn!)
+            : DateFormat('hh:mm a').format(DateTime.now()));
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),

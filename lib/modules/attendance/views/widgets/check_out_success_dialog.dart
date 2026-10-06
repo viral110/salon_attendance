@@ -18,9 +18,15 @@ class CheckOutSuccessDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final checkOutTimeStr = attendance.checkOut != null
-        ? DateFormat('hh:mm a').format(attendance.checkOut!)
-        : DateFormat('hh:mm a').format(DateTime.now());
+    final inTimeStr = (attendance.checkInTimeStr != null && attendance.checkInTimeStr!.trim().isNotEmpty)
+        ? attendance.checkInTimeStr!.trim()
+        : (attendance.checkIn != null ? DateFormat('hh:mm a').format(attendance.checkIn!) : null);
+
+    final outTimeStr = (attendance.checkOutTimeStr != null && attendance.checkOutTimeStr!.trim().isNotEmpty)
+        ? attendance.checkOutTimeStr!.trim()
+        : (attendance.checkOut != null
+            ? DateFormat('hh:mm a').format(attendance.checkOut!)
+            : DateFormat('hh:mm a').format(DateTime.now()));
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -77,6 +83,29 @@ class CheckOutSuccessDialog extends StatelessWidget {
               ),
               child: Column(
                 children: [
+                  if (inTimeStr != null && inTimeStr.isNotEmpty) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Check-In Time',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        Text(
+                          inTimeStr,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.success,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 16, color: AppColors.border),
+                  ],
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -88,7 +117,7 @@ class CheckOutSuccessDialog extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        checkOutTimeStr,
+                        outTimeStr,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

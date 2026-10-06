@@ -29,6 +29,12 @@ class AttendanceActionResult {
   final String message;
   final String? errors;
   final bool isDuplicateProtection;
+  final Map<String, dynamic>? backendData;
+  final String? checkInTimeStr; // e.g. "02:36 PM" from backend
+  final String? checkOutTimeStr; // e.g. "03:53 PM" from backend
+  final String? totalHoursStr; // e.g. "1h 17m" from backend
+  final String? dateStr; // e.g. "2026-10-06" from backend
+  final String? statusStr; // e.g. "present" from backend
 
   AttendanceActionResult({
     required this.success,
@@ -38,6 +44,12 @@ class AttendanceActionResult {
     required this.message,
     this.errors,
     this.isDuplicateProtection = false,
+    this.backendData,
+    this.checkInTimeStr,
+    this.checkOutTimeStr,
+    this.totalHoursStr,
+    this.dateStr,
+    this.statusStr,
   });
 }
 
@@ -285,13 +297,24 @@ class AttendanceService {
 
       StaffModel? matchedStaff;
       final dataMap = responseData['data'] is Map<String, dynamic> ? responseData['data'] as Map<String, dynamic> : null;
+
+      final String? checkInStr = dataMap?['check_in']?.toString();
+      final String? checkOutStr = dataMap?['check_out']?.toString();
+      final String? totalHoursStr = dataMap?['total_hours']?.toString();
+      final String? dateStr = dataMap?['date']?.toString();
+      final String? statusStr = dataMap?['status']?.toString();
+      final String? nickname = dataMap?['nickname']?.toString();
+      final String? actionPerformed = dataMap?['action_performed']?.toString().toLowerCase();
+
       if (dataMap != null) {
         final rawStaffId = dataMap['staff_id'] ?? dataMap['staffId'] ?? dataMap['id'];
         final staffName = dataMap['staff_name'] ?? dataMap['name'] ?? dataMap['staff']?['name'] ?? 'Staff Member';
         if (rawStaffId != null) {
           matchedStaff = StaffModel(
             id: rawStaffId.toString(),
+            dbId: int.tryParse(rawStaffId.toString()) ?? 0,
             name: staffName.toString(),
+            nickname: nickname,
             role: dataMap['role']?.toString() ?? 'Staff',
             isFaceRegistered: true,
             isActive: true,
@@ -317,7 +340,15 @@ class AttendanceService {
         }
       }
 
-      AttendanceAction action = targetAction;
+      AttendanceAction action;
+      if (actionPerformed == 'check_out') {
+        action = AttendanceAction.checkOut;
+      } else if (actionPerformed == 'check_in') {
+        action = AttendanceAction.checkIn;
+      } else {
+        action = targetAction;
+      }
+
       final msgLower = message.toLowerCase();
       final errLower = (errorsMessage ?? '').toLowerCase();
 
@@ -328,21 +359,25 @@ class AttendanceService {
       }
 
       final verificationId = 'VER_${_uuid.v4().substring(0, 8)}';
-      final attendanceId = dataMap?['id']?.toString() ?? 'ATT_${_uuid.v4().substring(0, 8)}';
+      final attendanceId = dataMap?['attendance_id']?.toString() ?? dataMap?['id']?.toString() ?? 'ATT_${_uuid.v4().substring(0, 8)}';
 
       AttendanceModel? updatedRecord;
       if (isSuccess && matchedStaff != null) {
-        final dateKeyStr = getDateKey(now);
+        final dateKeyStr = dateStr ?? getDateKey(now);
         updatedRecord = AttendanceModel(
           id: attendanceId,
           staffId: matchedStaff.id,
           dateKey: dateKeyStr,
-          date: now,
-          checkIn: targetAction == AttendanceAction.checkIn ? now : null,
-          checkOut: targetAction == AttendanceAction.checkOut ? now : null,
-          status: targetAction == AttendanceAction.checkIn ? AttendanceStatus.checkedIn : AttendanceStatus.checkedOut,
-          checkInVerificationId: targetAction == AttendanceAction.checkIn ? verificationId : null,
-          checkOutVerificationId: targetAction == AttendanceAction.checkOut ? verificationId : null,
+          date: (dateStr != null ? DateTime.tryParse(dateStr) : null) ?? now,
+          checkIn: (checkInStr != null && checkInStr.isNotEmpty) ? now : (action == AttendanceAction.checkIn ? now : null),
+          checkOut: (checkOutStr != null && checkOutStr.isNotEmpty) ? now : (action == AttendanceAction.checkOut ? now : null),
+          status: action == AttendanceAction.checkIn ? AttendanceStatus.checkedIn : AttendanceStatus.checkedOut,
+          checkInVerificationId: action == AttendanceAction.checkIn ? verificationId : null,
+          checkOutVerificationId: action == AttendanceAction.checkOut ? verificationId : null,
+          checkInTimeStr: checkInStr,
+          checkOutTimeStr: checkOutStr,
+          totalHoursStr: totalHoursStr,
+          rawStatus: statusStr,
           createdAt: now,
           updatedAt: now,
         );
@@ -357,6 +392,12 @@ class AttendanceService {
         staff: matchedStaff,
         message: message,
         errors: errorsMessage,
+        backendData: dataMap,
+        checkInTimeStr: checkInStr,
+        checkOutTimeStr: checkOutStr,
+        totalHoursStr: totalHoursStr,
+        dateStr: dateStr,
+        statusStr: statusStr,
       );
     } catch (e) {
       return AttendanceActionResult(

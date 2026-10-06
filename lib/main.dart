@@ -8,6 +8,7 @@ import 'config/app_colors.dart';
 import 'modules/attendance/controllers/face_attendance_controller.dart';
 import 'modules/navigation/main_navigation_page.dart';
 import 'modules/staff/controllers/staff_controller.dart';
+import 'services/wa_sender_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,6 +21,7 @@ void main() async {
 
   Get.put(StaffController());
   Get.put(FaceAttendanceController());
+  Get.put(WASenderService());
 
   runApp(
     DevicePreview(
