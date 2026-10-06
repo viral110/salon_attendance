@@ -33,7 +33,7 @@ class StaffDetailPage extends StatelessWidget {
         return Scaffold(
           backgroundColor: AppColors.background,
           appBar: CommonAppBar(
-            title: currentStaff.name,
+            title: currentStaff.displayName,
             showBackButton: true,
           ),
           body: SingleChildScrollView(
@@ -55,7 +55,7 @@ class StaffDetailPage extends StatelessWidget {
                       children: [
                         StaffAvatar(
                           imageUrl: currentStaff.profilePicture,
-                          name: currentStaff.name,
+                          name: currentStaff.displayName,
                           radius: 40,
                           backgroundColor: const Color(0xFFEFF2FE),
                           textColor: const Color(0xFF4F46E5),
@@ -63,13 +63,37 @@ class StaffDetailPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          currentStaff.name,
+                          currentStaff.displayName,
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
                             color: AppColors.textPrimary,
                           ),
                         ),
+                        if (currentStaff.secondaryName != null) ...[
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceVariant,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.border,
+                              ),
+                            ),
+                            child: Text(
+                              'Real Name: ${currentStaff.secondaryName}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 4),
                         Text(
                           '${currentStaff.role} • ${currentStaff.staffIdCode ?? "STAFF_${currentStaff.id}"}',
@@ -139,7 +163,6 @@ class StaffDetailPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-
                   // Face Recognition Settings Card
                   Container(
                     width: double.infinity,

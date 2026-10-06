@@ -302,7 +302,7 @@ class FaceAttendanceController extends GetxController with WidgetsBindingObserve
       _lastLeftEyeProb = leftEyeProb;
       _lastRightEyeProb = rightEyeProb;
 
-      // Smooth 0.8-Second Hold-to-Verify Logic
+      // Fast 0.25-Second Hold-to-Verify Logic (Reduced from 800ms for fast attendance)
       if (_holdStartTime == null) {
         _holdStartTime = DateTime.now();
         _scanProgress = 0.0;
@@ -310,21 +310,36 @@ class FaceAttendanceController extends GetxController with WidgetsBindingObserve
         _eyeClosedDetected = false;
       }
 
+      const double holdDurationMs = 250.0;
       final elapsedMs = now.difference(_holdStartTime!).inMilliseconds;
-      _scanProgress = (elapsedMs / 800.0).clamp(0.0, 1.0);
+      _scanProgress = (elapsedMs / holdDurationMs).clamp(0.0, 1.0);
 
       if (_scanProgress < 1.0) {
         final percent = (_scanProgress * 100).toInt();
-        _statusMessage = 'Face Detected! Hold still... $percent%';
+        _statusMessage = 'Face Detected! $percent%';
         update();
         _isProcessingFrame = false;
         return;
       }
 
-      // Verification Completed -> Stop scanning & submit face embedding directly to backend
+      // Convert verified frame to JPEG base64
+      final orientation = _cameraController?.description.sensorOrientation ?? 0;
+      String? base64Image = CameraImageConverter.convertToJpegDataUri(
+        image: image,
+        sensorOrientation: orientation,
+      );
+
+      // Verification Completed -> Stop scanning & submit image directly to backend
       stopScanning();
       _statusMessage = 'Verifying face with backend server...';
       update();
+
+      if ((base64Image == null || base64Image.isEmpty) && _cameraController != null && _cameraController!.value.isInitialized) {
+        try {
+          final file = await _cameraController!.takePicture();
+          base64Image = await CameraImageConverter.convertXFileToJpegDataUri(file);
+        } catch (_) {}
+      }
 
       final faceEmbedding = _faceService.extractFaceEmbedding(
         face: face,
@@ -332,6 +347,7 @@ class FaceAttendanceController extends GetxController with WidgetsBindingObserve
       );
 
       final actionResult = await _attendanceService.verifyFaceWithBackend(
+        imageBase64: base64Image ?? '',
         faceEmbedding: faceEmbedding,
         selectedMode: _selectedMode,
       );
@@ -342,8 +358,8 @@ class FaceAttendanceController extends GetxController with WidgetsBindingObserve
       _statusMessage = actionResult.message;
       update();
 
-      // Automatically reset scanner after 3 seconds delay
-      Future.delayed(const Duration(seconds: 3), () {
+      // Automatically reset scanner after 1.5 seconds delay
+      Future.delayed(const Duration(milliseconds: 1500), () {
         resetScanner();
       });
     } catch (e) {

@@ -8,6 +8,7 @@ import '../config/api_endpoints.dart';
 import '../config/face_recognition_config.dart';
 import '../modules/attendance/models/attendance_model.dart';
 import '../modules/staff/models/staff_model.dart';
+import '../utils/camera_image_converter.dart';
 import 'api_service.dart';
 
 enum SelectedAttendanceMode { auto, checkIn, checkOut }
@@ -245,25 +246,21 @@ class AttendanceService {
 
   /// Direct Backend Face Verification & Attendance Submission via POST /api/v1/attendance/verify-face
   Future<AttendanceActionResult> verifyFaceWithBackend({
-    required List<double> faceEmbedding,
-    List<List<double>>? faceTemplates,
+    required String imageBase64,
     SelectedAttendanceMode selectedMode = SelectedAttendanceMode.auto,
+    List<double>? faceEmbedding,
   }) async {
     final now = DateTime.now();
     final actionStr = selectedMode == SelectedAttendanceMode.checkOut ? 'check_out' : 'check_in';
     final targetAction = selectedMode == SelectedAttendanceMode.checkOut ? AttendanceAction.checkOut : AttendanceAction.checkIn;
 
-    final List<List<double>> templatesList = (faceTemplates != null && faceTemplates.isNotEmpty)
-        ? faceTemplates
-        : [faceEmbedding];
-
-    final String faceTemplateJson = jsonEncode(templatesList);
+    final formattedImage = CameraImageConverter.ensureJpegDataUri(imageBase64);
 
     try {
       final apiResponse = await _apiService.post(
         ApiEndpoints.attendanceVerifyFace,
         body: {
-          'face_template': faceTemplateJson,
+          'image': formattedImage,
           'action': actionStr,
         },
       );

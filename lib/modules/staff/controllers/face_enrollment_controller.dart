@@ -37,6 +37,7 @@ class FaceEnrollmentController extends GetxController with WidgetsBindingObserve
 
   StaffModel? _targetStaff;
   final List<List<double>> _collectedTemplates = [];
+  String? _capturedImageBase64;
 
   // Pose template counters
   int _frontCount = 0;
@@ -56,6 +57,7 @@ class FaceEnrollmentController extends GetxController with WidgetsBindingObserve
   EnrollmentPoseStep get currentStep => _currentStep;
   StaffModel? get targetStaff => _targetStaff;
   List<List<double>> get collectedTemplates => _collectedTemplates;
+  String? get capturedImageBase64 => _capturedImageBase64;
   double get enrollmentProgress => (_collectedTemplates.length / 8.0).clamp(0.0, 1.0);
   List<double>? get capturedEmbedding => _collectedTemplates.isNotEmpty ? _collectedTemplates.first : null;
 
@@ -68,6 +70,7 @@ class FaceEnrollmentController extends GetxController with WidgetsBindingObserve
     _isEnrolledSuccess = false;
     _isDuplicateDetected = false;
     _collectedTemplates.clear();
+    _capturedImageBase64 = null;
     _frontCount = 0;
     _leftCount = 0;
     _rightCount = 0;
@@ -81,6 +84,7 @@ class FaceEnrollmentController extends GetxController with WidgetsBindingObserve
     _isEnrolledSuccess = false;
     _isDuplicateDetected = false;
     _collectedTemplates.clear();
+    _capturedImageBase64 = null;
     _frontCount = 0;
     _leftCount = 0;
     _rightCount = 0;
@@ -232,6 +236,14 @@ class FaceEnrollmentController extends GetxController with WidgetsBindingObserve
         case EnrollmentPoseStep.lookFront:
           if (rotY.abs() <= 10.0) {
             _collectedTemplates.add(candidateEmbedding);
+            // Capture frontal face image for registration
+            if (_capturedImageBase64 == null) {
+              final orientation = _cameraController?.description.sensorOrientation ?? 0;
+              _capturedImageBase64 = CameraImageConverter.convertToJpegDataUri(
+                image: image,
+                sensorOrientation: orientation,
+              );
+            }
             _frontCount++;
             if (_frontCount >= 2) {
               _currentStep = EnrollmentPoseStep.turnLeft;
@@ -383,7 +395,28 @@ class FaceEnrollmentController extends GetxController with WidgetsBindingObserve
         }
       }
 
-      // Save multi-pose template list
+      // Ensure front image was captured, or take fallback photo
+      if (_capturedImageBase64 == null && _cameraController != null && _cameraController!.value.isInitialized) {
+        try {
+          if (_cameraController!.value.isStreamingImages) {
+            await _cameraController!.stopImageStream();
+          }
+          final XFile file = await _cameraController!.takePicture();
+          _capturedImageBase64 = await CameraImageConverter.convertXFileToJpegDataUri(file);
+        } catch (e) {
+          debugPrint('Fallback capture error: $e');
+        }
+      }
+
+      if (_capturedImageBase64 == null || _capturedImageBase64!.isEmpty) {
+        return StaffFaceEnrollmentResponse(
+          success: false,
+          message: 'Image Capture Failed',
+          errors: 'Could not capture face image. Please position your face and try again.',
+        );
+      }
+
+      // Save multi-pose template list locally
       final primaryEmbedding = _collectedTemplates.first;
       final updatedStaff = _targetStaff!.copyWith(
         faceEnrolled: true,
@@ -393,8 +426,8 @@ class FaceEnrollmentController extends GetxController with WidgetsBindingObserve
 
       final apiRes = await _staffService.enrollStaffFace(
         staffId: updatedStaff.dbId > 0 ? updatedStaff.dbId : updatedStaff.id,
+        imageBase64: _capturedImageBase64!,
         faceEmbedding: primaryEmbedding,
-        faceTemplates: _collectedTemplates,
       );
 
       if (apiRes.success) {

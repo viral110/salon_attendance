@@ -190,8 +190,8 @@ class FaceAttendancePageState extends State<FaceAttendancePage> {
       controller.resetScanner();
     });
 
-    // Dismiss dialog automatically after 2.5s
-    Future.delayed(const Duration(milliseconds: 2500), () {
+    // Dismiss dialog automatically after 1.5s
+    Future.delayed(const Duration(milliseconds: 1500), () {
       if (Get.isDialogOpen ?? false) {
         Get.back();
       }

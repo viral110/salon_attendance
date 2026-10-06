@@ -18,6 +18,8 @@ class StaffModel {
   final dynamic rawFaceTemplate; // Can be String, List<num>, or List<List<num>>
   final List<double>? faceEmbedding;
   final List<List<double>>? faceTemplates;
+  final String? awsFaceId;
+  final String? type;
   final String? idProofFront;
   final String? idProofBack;
   final String? aadharCardNumber;
@@ -28,7 +30,15 @@ class StaffModel {
   final String? address;
   final String? dateOfJoining;
   final String? weeklyOffDay;
+  final String? referenceName;
+  final String? referenceContact;
+  final String? emergencyContactNumber;
+  final String? emergencyContactName;
+  final String? relationship;
   final String? experience;
+  final String? reasonForLeaving;
+  final String? lastWorkPlace;
+  final bool housekeepingTip;
   final String? commissionType;
   final List<StaffServiceItem> services;
   final List<StaffWorkingHour> workingHours;
@@ -53,6 +63,8 @@ class StaffModel {
     this.rawFaceTemplate,
     this.faceEmbedding,
     this.faceTemplates,
+    this.awsFaceId,
+    this.type,
     this.idProofFront,
     this.idProofBack,
     this.aadharCardNumber,
@@ -63,7 +75,15 @@ class StaffModel {
     this.address,
     this.dateOfJoining,
     this.weeklyOffDay,
+    this.referenceName,
+    this.referenceContact,
+    this.emergencyContactNumber,
+    this.emergencyContactName,
+    this.relationship,
     this.experience,
+    this.reasonForLeaving,
+    this.lastWorkPlace,
+    this.housekeepingTip = false,
     this.commissionType,
     this.services = const [],
     this.workingHours = const [],
@@ -74,11 +94,36 @@ class StaffModel {
   /// Alias getter for faceEnrolled for backward compatibility
   bool get faceEnrolled =>
       isFaceRegistered ||
+      (awsFaceId != null && awsFaceId!.isNotEmpty) ||
       (faceEmbedding != null && faceEmbedding!.isNotEmpty) ||
       (faceTemplates != null && faceTemplates!.isNotEmpty);
-  String? get faceTemplateId => faceEnrolled ? 'TMP_$id' : null;
+  String? get faceTemplateId => faceEnrolled ? (awsFaceId ?? 'TMP_$id') : null;
   DateTime? get faceEnrolledAt => faceRegisteredAt;
   DateTime? get faceUpdatedAt => updatedAt;
+
+  /// Formatted list of weekly off days
+  List<String> get weeklyOffDaysList {
+    if (weeklyOffDay == null || weeklyOffDay!.trim().isEmpty) return [];
+    return weeklyOffDay!.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+  }
+
+  /// Primary display name: Nickname if available, otherwise real Name.
+  String get displayName {
+    if (nickname != null && nickname!.trim().isNotEmpty) {
+      return nickname!.trim();
+    }
+    return name;
+  }
+
+  /// Secondary name: Real name if nickname is used and different from real name.
+  String? get secondaryName {
+    if (nickname != null &&
+        nickname!.trim().isNotEmpty &&
+        nickname!.trim().toLowerCase() != name.trim().toLowerCase()) {
+      return name.trim();
+    }
+    return null;
+  }
 
   StaffModel copyWith({
     String? id,
@@ -98,6 +143,8 @@ class StaffModel {
     dynamic rawFaceTemplate,
     List<double>? faceEmbedding,
     List<List<double>>? faceTemplates,
+    String? awsFaceId,
+    String? type,
     String? idProofFront,
     String? idProofBack,
     String? aadharCardNumber,
@@ -108,7 +155,15 @@ class StaffModel {
     String? address,
     String? dateOfJoining,
     String? weeklyOffDay,
+    String? referenceName,
+    String? referenceContact,
+    String? emergencyContactNumber,
+    String? emergencyContactName,
+    String? relationship,
     String? experience,
+    String? reasonForLeaving,
+    String? lastWorkPlace,
+    bool? housekeepingTip,
     String? commissionType,
     List<StaffServiceItem>? services,
     List<StaffWorkingHour>? workingHours,
@@ -132,6 +187,8 @@ class StaffModel {
       rawFaceTemplate: rawFaceTemplate ?? this.rawFaceTemplate,
       faceEmbedding: faceEmbedding ?? this.faceEmbedding,
       faceTemplates: faceTemplates ?? this.faceTemplates,
+      awsFaceId: awsFaceId ?? this.awsFaceId,
+      type: type ?? this.type,
       idProofFront: idProofFront ?? this.idProofFront,
       idProofBack: idProofBack ?? this.idProofBack,
       aadharCardNumber: aadharCardNumber ?? this.aadharCardNumber,
@@ -142,7 +199,15 @@ class StaffModel {
       address: address ?? this.address,
       dateOfJoining: dateOfJoining ?? this.dateOfJoining,
       weeklyOffDay: weeklyOffDay ?? this.weeklyOffDay,
+      referenceName: referenceName ?? this.referenceName,
+      referenceContact: referenceContact ?? this.referenceContact,
+      emergencyContactNumber: emergencyContactNumber ?? this.emergencyContactNumber,
+      emergencyContactName: emergencyContactName ?? this.emergencyContactName,
+      relationship: relationship ?? this.relationship,
       experience: experience ?? this.experience,
+      reasonForLeaving: reasonForLeaving ?? this.reasonForLeaving,
+      lastWorkPlace: lastWorkPlace ?? this.lastWorkPlace,
+      housekeepingTip: housekeepingTip ?? this.housekeepingTip,
       commissionType: commissionType ?? this.commissionType,
       services: services ?? this.services,
       workingHours: workingHours ?? this.workingHours,
@@ -166,9 +231,26 @@ class StaffModel {
       return defaultVal;
     }
 
-    final p1 = json['phone_1'] as String?;
-    final p2 = json['phone_2'] as String?;
-    final phoneNum = (p1 != null && p1.isNotEmpty) ? p1 : (p2 ?? json['phone'] as String?);
+    // Helper for safe string parsing
+    String? parseString(dynamic val) {
+      if (val == null) return null;
+      if (val is String) {
+        final trimmed = val.trim();
+        return trimmed.isEmpty ? null : trimmed;
+      }
+      if (val is List) {
+        final items = val
+            .map((e) => e?.toString().trim())
+            .where((e) => e != null && e.isNotEmpty && e.toLowerCase() != 'none')
+            .toList();
+        return items.isEmpty ? null : items.join(', ');
+      }
+      return val.toString();
+    }
+
+    final p1 = parseString(json['phone_1']);
+    final p2 = parseString(json['phone_2']);
+    final phoneNum = (p1 != null && p1.isNotEmpty) ? p1 : (p2 ?? parseString(json['phone']));
 
     // Extract face embedding & templates if present
     List<double>? primaryEmbedding;
@@ -208,17 +290,25 @@ class StaffModel {
     // Services parsing
     List<StaffServiceItem> parsedServices = [];
     if (json['services'] is List) {
-      parsedServices = (json['services'] as List)
-          .map((s) => StaffServiceItem.fromJson(s as Map<String, dynamic>))
-          .toList();
+      for (var s in (json['services'] as List)) {
+        if (s is Map) {
+          try {
+            parsedServices.add(StaffServiceItem.fromJson(Map<String, dynamic>.from(s)));
+          } catch (_) {}
+        }
+      }
     }
 
     // Working hours parsing
     List<StaffWorkingHour> parsedWorkingHours = [];
     if (json['working_hours'] is List) {
-      parsedWorkingHours = (json['working_hours'] as List)
-          .map((w) => StaffWorkingHour.fromJson(w as Map<String, dynamic>))
-          .toList();
+      for (var w in (json['working_hours'] as List)) {
+        if (w is Map) {
+          try {
+            parsedWorkingHours.add(StaffWorkingHour.fromJson(Map<String, dynamic>.from(w)));
+          } catch (_) {}
+        }
+      }
     }
 
     DateTime parsedCreated = DateTime.now();
@@ -242,43 +332,84 @@ class StaffModel {
       } catch (_) {}
     }
 
+    final awsFaceId = parseString(json['aws_face_id']);
+
     final isReg = parseBool(
       json['is_face_registered'],
-      (primaryEmbedding != null && primaryEmbedding.isNotEmpty) ||
+      (awsFaceId != null && awsFaceId.isNotEmpty) ||
+          (primaryEmbedding != null && primaryEmbedding.isNotEmpty) ||
           (json['face_template'] != null &&
               json['face_template'].toString().trim().isNotEmpty &&
               json['face_template'].toString().trim() != 'null'),
     );
 
+    // Weekly off days parsing
+    String? parsedWeeklyOffDay;
+    final rawOff = json['weekly_off_day'];
+    if (rawOff is List) {
+      final items = rawOff
+          .map((e) => e?.toString().replaceAll(RegExp(r'[\[\]"]'), '').trim())
+          .where((e) => e != null && e.isNotEmpty && e.toLowerCase() != 'none')
+          .map((e) => e!.length > 1 ? (e[0].toUpperCase() + e.substring(1).toLowerCase()) : e)
+          .toList();
+      parsedWeeklyOffDay = items.isEmpty ? null : items.join(', ');
+    } else {
+      parsedWeeklyOffDay = parseString(rawOff);
+    }
+
+    bool parsedIsActive = true;
+    if (json.containsKey('is_active')) {
+      parsedIsActive = parseBool(json['is_active'], true);
+    } else if (json.containsKey('active')) {
+      parsedIsActive = parseBool(json['active'], true);
+    } else if (json['status'] != null) {
+      final st = json['status'].toString().toLowerCase().trim();
+      if (st == 'active' || st == '1' || st == 'true') {
+        parsedIsActive = true;
+      } else if (st == 'inactive' || st == '0' || st == 'false' || st == 'disabled' || st == 'deactive') {
+        parsedIsActive = false;
+      }
+    }
+
     return StaffModel(
       id: staffIdStr,
       dbId: dbIdVal,
-      name: (json['name'] as String?) ?? 'Staff #$dbIdVal',
-      nickname: json['nickname'] as String?,
-      email: json['email'] as String?,
+      name: parseString(json['name']) ?? 'Staff #$dbIdVal',
+      nickname: parseString(json['nickname']),
+      email: parseString(json['email']),
       phone: phoneNum,
       phone1: p1,
       phone2: p2,
       role: parsedRole,
-      profilePicture: json['profile_picture'] as String?,
-      isActive: parseBool(json['is_active'], true),
+      profilePicture: parseString(json['profile_picture']),
+      isActive: parsedIsActive,
       isFaceRegistered: isReg,
       faceRegisteredAt: parsedFaceRegAt,
       rawFaceTemplate: faceTpl,
       faceEmbedding: primaryEmbedding,
       faceTemplates: templates,
-      idProofFront: json['id_proof_front'] as String?,
-      idProofBack: json['id_proof_back'] as String?,
-      aadharCardNumber: json['aadhar_card_number'] as String?,
-      staffIdCode: json['staff_id']?.toString(),
-      lockerNumber: json['locker_number'] as String?,
-      dob: json['dob'] as String?,
-      gender: json['gender'] as String?,
-      address: json['address'] as String?,
-      dateOfJoining: json['date_of_joining'] as String?,
-      weeklyOffDay: json['weekly_off_day'] as String?,
-      experience: json['experience'] as String?,
-      commissionType: json['commission_type'] as String?,
+      awsFaceId: awsFaceId,
+      type: parseString(json['type']),
+      idProofFront: parseString(json['id_proof_front']),
+      idProofBack: parseString(json['id_proof_back']),
+      aadharCardNumber: parseString(json['aadhar_card_number']),
+      staffIdCode: parseString(json['staff_id']),
+      lockerNumber: parseString(json['locker_number']),
+      dob: parseString(json['dob']),
+      gender: parseString(json['gender']),
+      address: parseString(json['address']),
+      dateOfJoining: parseString(json['date_of_joining']),
+      weeklyOffDay: parsedWeeklyOffDay,
+      referenceName: parseString(json['reference_name']),
+      referenceContact: parseString(json['reference_contact']),
+      emergencyContactNumber: parseString(json['emergency_contact_number']),
+      emergencyContactName: parseString(json['emergency_contact_name']),
+      relationship: parseString(json['relationship']),
+      experience: parseString(json['experience']),
+      reasonForLeaving: parseString(json['reason_for_leaving']),
+      lastWorkPlace: parseString(json['last_work_place']),
+      housekeepingTip: parseBool(json['housekeeping_tip'], false),
+      commissionType: parseString(json['commission_type']),
       services: parsedServices,
       workingHours: parsedWorkingHours,
       createdAt: parsedCreated,
@@ -352,18 +483,18 @@ class StaffServiceItem {
 
   factory StaffServiceItem.fromJson(Map<String, dynamic> json) {
     return StaffServiceItem(
-      id: json['id'] is num ? (json['id'] as num).toInt() : int.tryParse(json['id'].toString()) ?? 0,
-      name: (json['name'] as String?) ?? '',
-      description: json['description'] as String?,
-      image: json['image'] as String?,
+      id: json['id'] is num ? (json['id'] as num).toInt() : int.tryParse(json['id']?.toString() ?? '') ?? 0,
+      name: json['name']?.toString() ?? '',
+      description: json['description']?.toString(),
+      image: json['image']?.toString(),
       price: json['price']?.toString() ?? '0.00',
-      serviceTime: json['service_time'] as String?,
-      processingTime: json['processing_time'] as String?,
-      isVisibleOnline: json['is_visible_online'] == true || json['is_visible_online'] == 1,
-      status: json['status'] == true || json['status'] == 1,
-      staffPricingModule: json['staff_pricing_module'] == true || json['staff_pricing_module'] == 1,
-      position: json['position'] is num ? (json['position'] as num).toInt() : null,
-      pivot: json['pivot'] is Map<String, dynamic> ? StaffServicePivot.fromJson(json['pivot']) : null,
+      serviceTime: json['service_time']?.toString(),
+      processingTime: json['processing_time']?.toString(),
+      isVisibleOnline: json['is_visible_online'] == true || json['is_visible_online'] == 1 || json['is_visible_online'] == '1',
+      status: json['status'] == true || json['status'] == 1 || json['status'] == '1',
+      staffPricingModule: json['staff_pricing_module'] == true || json['staff_pricing_module'] == 1 || json['staff_pricing_module'] == '1',
+      position: json['position'] is num ? (json['position'] as num).toInt() : int.tryParse(json['position']?.toString() ?? ''),
+      pivot: json['pivot'] is Map ? StaffServicePivot.fromJson(Map<String, dynamic>.from(json['pivot'] as Map)) : null,
     );
   }
 }
@@ -409,12 +540,12 @@ class StaffWorkingHour {
 
   factory StaffWorkingHour.fromJson(Map<String, dynamic> json) {
     return StaffWorkingHour(
-      id: json['id'] is num ? (json['id'] as num).toInt() : int.tryParse(json['id'].toString()) ?? 0,
-      userId: json['user_id'] is num ? (json['user_id'] as num).toInt() : int.tryParse(json['user_id'].toString()) ?? 0,
-      day: (json['day'] as String?) ?? '',
-      startTime: json['start_time'] as String?,
-      endTime: json['end_time'] as String?,
-      isActive: json['is_active'] == true || json['is_active'] == 1,
+      id: json['id'] is num ? (json['id'] as num).toInt() : int.tryParse(json['id']?.toString() ?? '') ?? 0,
+      userId: json['user_id'] is num ? (json['user_id'] as num).toInt() : int.tryParse(json['user_id']?.toString() ?? '') ?? 0,
+      day: json['day']?.toString() ?? '',
+      startTime: json['start_time']?.toString(),
+      endTime: json['end_time']?.toString(),
+      isActive: json['is_active'] == true || json['is_active'] == 1 || json['is_active'] == '1',
     );
   }
 }
@@ -479,13 +610,13 @@ class StaffFaceTemplateModel {
 
     return StaffFaceTemplateModel(
       staffId: sId,
-      name: (json['name'] as String?) ?? 'Staff #$sId',
-      nickname: json['nickname'] as String?,
-      profilePicture: json['profile_picture'] as String?,
+      name: json['name']?.toString() ?? 'Staff #$sId',
+      nickname: json['nickname']?.toString(),
+      profilePicture: json['profile_picture']?.toString(),
       faceTemplate: primaryVector,
       faceTemplates: templatesList,
-      faceRegisteredAt: json['face_registered_at'] as String?,
-      updatedAt: json['updated_at'] as String?,
+      faceRegisteredAt: json['face_registered_at']?.toString(),
+      updatedAt: json['updated_at']?.toString(),
     );
   }
 }

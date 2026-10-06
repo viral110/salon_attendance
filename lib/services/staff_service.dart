@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:salon_attendance/modules/staff/models/staff_model.dart';
 
 import '../config/api_endpoints.dart';
+import '../utils/camera_image_converter.dart';
 import 'api_service.dart';
 
 class StaffFaceEnrollmentResponse {
@@ -13,6 +15,22 @@ class StaffFaceEnrollmentResponse {
     required this.success,
     required this.message,
     this.errors,
+  });
+}
+
+class PaginatedStaffResponse {
+  final List<StaffModel> staffList;
+  final int currentPage;
+  final int lastPage;
+  final int total;
+  final bool hasMore;
+
+  PaginatedStaffResponse({
+    required this.staffList,
+    required this.currentPage,
+    required this.lastPage,
+    required this.total,
+    required this.hasMore,
   });
 }
 
@@ -30,32 +48,81 @@ class StaffService {
 
   List<StaffModel> get cachedStaff => _cachedStaffList;
 
-  /// Fetch staff list from GET /api/staff
+  /// Fetch paginated active staff list from GET /api/staff?page={page}&status={status}
+  Future<PaginatedStaffResponse> fetchStaffPaginated({
+    int page = 1,
+    int status = 1, // Only active staff by default
+    bool forceRefresh = false,
+  }) async {
+    try {
+      final endpoint = '${ApiEndpoints.staff}?page=$page&status=$status';
+      final response = await _apiService.get(endpoint);
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['success'] == true && body['data'] != null) {
+          final dataMap = body['data'];
+          final List dynamicList = dataMap['data'] ?? [];
+
+          final currentPage = dataMap['current_page'] is num ? (dataMap['current_page'] as num).toInt() : page;
+          final lastPage = dataMap['last_page'] is num ? (dataMap['last_page'] as num).toInt() : page;
+          final total = dataMap['total'] is num ? (dataMap['total'] as num).toInt() : dynamicList.length;
+
+          List<StaffModel> items = [];
+          for (var item in dynamicList) {
+            if (item is Map) {
+              try {
+                items.add(StaffModel.fromApiJson(Map<String, dynamic>.from(item)));
+              } catch (e, stack) {
+                debugPrint('⚠️ Error parsing staff item: $e\n$stack');
+              }
+            }
+          }
+
+          // Sync with registered face templates
+          items = await syncFaceTemplates(items);
+
+          if (page == 1) {
+            _cachedStaffList = List.from(items);
+          } else {
+            final existingIds = _cachedStaffList.map((e) => e.id).toSet();
+            for (var item in items) {
+              if (!existingIds.contains(item.id)) {
+                _cachedStaffList.add(item);
+              }
+            }
+          }
+
+          return PaginatedStaffResponse(
+            staffList: items,
+            currentPage: currentPage,
+            lastPage: lastPage,
+            total: total,
+            hasMore: currentPage < lastPage,
+          );
+        }
+      }
+    } catch (e, stack) {
+      debugPrint('❌ Error in fetchStaffPaginated: $e\n$stack');
+    }
+
+    return PaginatedStaffResponse(
+      staffList: page == 1 ? _cachedStaffList : [],
+      currentPage: page,
+      lastPage: page,
+      total: _cachedStaffList.length,
+      hasMore: false,
+    );
+  }
+
+  /// Fetch staff list (compatibility method)
   Future<List<StaffModel>> getAllStaff({bool forceRefresh = false}) async {
     if (!forceRefresh && _cachedStaffList.isNotEmpty) {
       return _cachedStaffList;
     }
 
-    try {
-      final response = await _apiService.get(ApiEndpoints.staff);
-
-      if (response.statusCode == 200) {
-        final body = jsonDecode(response.body);
-        if (body['success'] == true && body['data'] != null) {
-          final List dynamicList = body['data']['data'] ?? [];
-          _cachedStaffList = dynamicList
-              .map((item) => StaffModel.fromApiJson(item as Map<String, dynamic>))
-              .toList();
-
-          // Sync with registered face templates if available
-          await _syncFaceTemplatesToStaffList();
-
-          return _cachedStaffList;
-        }
-      }
-    } catch (_) {}
-
-    return _cachedStaffList;
+    final res = await fetchStaffPaginated(page: 1, status: 1, forceRefresh: forceRefresh);
+    return _cachedStaffList.isNotEmpty ? _cachedStaffList : res.staffList;
   }
 
   /// Fetch registered staff face templates from GET /api/v1/staff/face-templates
@@ -77,8 +144,8 @@ class StaffService {
     return _cachedFaceTemplates;
   }
 
-  /// Sync registered face templates into _cachedStaffList items
-  Future<void> _syncFaceTemplatesToStaffList() async {
+  /// Sync registered face templates into a list of StaffModel items
+  Future<List<StaffModel>> syncFaceTemplates(List<StaffModel> targetList) async {
     try {
       final templates = await getFaceTemplates();
       final Map<int, List<List<double>>> dbIdTemplateMap = {};
@@ -92,17 +159,17 @@ class StaffService {
         }
       }
 
-      _cachedStaffList = _cachedStaffList.map((staff) {
+      return targetList.map((staff) {
         final tpls = dbIdTemplateMap[staff.dbId];
 
-        // 1. If staff already has valid MLKit face templates (e.g. from /api/staff JSON face_template)
         final currentTmpls = staff.faceTemplates ?? (staff.faceEmbedding != null ? [staff.faceEmbedding!] : null);
         final validCurrentTmpls = currentTmpls?.where((t) => t.length >= 60).toList();
 
-        if (staff.isFaceRegistered && validCurrentTmpls != null && validCurrentTmpls.isNotEmpty) {
-          final combined = (tpls != null && tpls.isNotEmpty)
-              ? [...validCurrentTmpls, ...tpls]
-              : validCurrentTmpls;
+        final bool hasServerTpls = tpls != null && tpls.isNotEmpty && tpls.first.length >= 60;
+        final bool hasCurrentTpls = validCurrentTmpls != null && validCurrentTmpls.isNotEmpty;
+
+        if (hasCurrentTpls) {
+          final combined = hasServerTpls ? [...validCurrentTmpls, ...tpls] : validCurrentTmpls;
           return staff.copyWith(
             isFaceRegistered: true,
             faceEmbedding: combined.first,
@@ -110,8 +177,7 @@ class StaffService {
           );
         }
 
-        // 2. If /api/staff marked is_face_registered as true AND extra templates found for this dbId
-        if (staff.isFaceRegistered && tpls != null && tpls.isNotEmpty && tpls.first.length >= 60) {
+        if (hasServerTpls) {
           return staff.copyWith(
             isFaceRegistered: true,
             faceEmbedding: tpls.first,
@@ -119,14 +185,21 @@ class StaffService {
           );
         }
 
-        // 3. Unregistered staff member or no valid template -> clear face embedding
         return staff.copyWith(
-          isFaceRegistered: false,
+          isFaceRegistered: staff.isFaceRegistered,
           faceEmbedding: null,
           faceTemplates: null,
         );
       }).toList();
-    } catch (_) {}
+    } catch (e, stack) {
+      debugPrint('⚠️ Error syncing face templates: $e\n$stack');
+      return targetList;
+    }
+  }
+
+  /// Sync registered face templates into _cachedStaffList items
+  Future<void> _syncFaceTemplatesToStaffList() async {
+    _cachedStaffList = await syncFaceTemplates(_cachedStaffList);
   }
 
   /// Retrieve staff members who are active and have registered face embeddings
@@ -137,7 +210,8 @@ class StaffService {
     return staffList.where((s) {
       final hasEmbedding = (s.faceEmbedding != null && s.faceEmbedding!.isNotEmpty) ||
           (s.faceTemplates != null && s.faceTemplates!.isNotEmpty);
-      return s.isActive && s.faceEnrolled && hasEmbedding;
+      final hasAwsFace = s.awsFaceId != null && s.awsFaceId!.isNotEmpty;
+      return s.isActive && (s.isFaceRegistered || s.faceEnrolled || hasEmbedding || hasAwsFace);
     }).toList();
   }
 
@@ -153,24 +227,18 @@ class StaffService {
     }
   }
 
-  /// Register or update staff face template via POST /api/v1/staff/face-register
+  /// Register or update staff face via POST /api/v1/staff/face-register
   Future<StaffFaceEnrollmentResponse> enrollStaffFace({
     required dynamic staffId,
-    required List<double> faceEmbedding,
-    List<List<double>>? faceTemplates,
+    required String imageBase64,
+    List<double>? faceEmbedding,
   }) async {
     final numericId = staffId is num ? staffId.toInt() : int.tryParse(staffId.toString()) ?? 0;
-
-    final String faceTemplateJson = (faceTemplates != null && faceTemplates.isNotEmpty)
-        ? jsonEncode(faceTemplates)
-        : jsonEncode(faceEmbedding);
-
-    final String primaryEmbeddingJson = jsonEncode(faceEmbedding);
+    final formattedImage = CameraImageConverter.ensureJpegDataUri(imageBase64);
 
     final bodyPayload = {
       'staffId': numericId,
-      'face_template': faceTemplateJson,
-      'primaryEmbedding': primaryEmbeddingJson,
+      'image': formattedImage,
     };
 
     try {

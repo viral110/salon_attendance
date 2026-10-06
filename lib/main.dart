@@ -5,9 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import 'config/app_colors.dart';
-import 'modules/attendance/controllers/attendance_history_controller.dart';
 import 'modules/attendance/controllers/face_attendance_controller.dart';
-import 'modules/dashboard/views/dashboard_page.dart';
+import 'modules/navigation/main_navigation_page.dart';
 import 'modules/staff/controllers/staff_controller.dart';
 
 void main() async {
@@ -20,7 +19,6 @@ void main() async {
   ]);
 
   Get.put(StaffController());
-  Get.put(AttendanceHistoryController());
   Get.put(FaceAttendanceController());
 
   runApp(
@@ -57,7 +55,7 @@ class SalonAttendanceApp extends StatelessWidget {
           foregroundColor: AppColors.textPrimary,
         ),
       ),
-      home: const DashboardPage(),
+      home: const MainNavigationPage(),
     );
   }
 }
